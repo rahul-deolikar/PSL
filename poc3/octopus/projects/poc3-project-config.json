@@ -1,0 +1,227 @@
+{
+  "Id": "Projects-1",
+  "Name": "POC3 - Complete CI/CD Pipeline",
+  "Description": "Complete CI/CD pipeline demonstration with multiple technology stacks deployed to AWS ECS",
+  "ProjectGroupId": "ProjectGroups-1",
+  "ProjectConnectivityPolicy": {
+    "AllowDeploymentsToNoTargets": false,
+    "ExcludeUnhealthyTargets": true,
+    "SkipMachineBehavior": "None",
+    "TargetRoles": ["ecs-cluster"]
+  },
+  "DefaultGuidedFailureMode": "EnvironmentDefault",
+  "VersioningStrategy": {
+    "Template": "#{Octopus.Version.LastMajor}.#{Octopus.Version.LastMinor}.#{Octopus.Version.NextPatch}",
+    "DonorPackageStepId": null,
+    "DonorPackage": null
+  },
+  "ReleaseCreationStrategy": {
+    "ChannelId": "Channels-1",
+    "ReleaseCreationPackageStepId": "deploy-nodejs-react"
+  },
+  "Templates": [],
+  "DeploymentProcessId": "deploymentprocesses-Projects-1",
+  "ClonedFromProjectId": null,
+  "AutoCreateRelease": false,
+  "DefaultToSkipIfAlreadyInstalled": false,
+  "TenantedDeploymentMode": "Untenanted",
+  "IncludedLibraryVariableSetIds": ["LibraryVariableSets-1"],
+  "AutoDeployReleaseOverrides": [],
+  "ReleaseNotesTemplate": "**Release Notes for #{Octopus.Release.Number}**\n\n**Changes in this release:**\n- Node.js/React: #{Octopus.Release.Package[poc3-nodejs-react].Version}\n- Python FastAPI: #{Octopus.Release.Package[poc3-python-fastapi].Version}\n- Java Spring Boot: #{Octopus.Release.Package[poc3-java-springboot].Version}\n- .NET Core Web API: #{Octopus.Release.Package[poc3-dotnet-webapi].Version}\n\n**Deployment Target:** AWS ECS Cluster\n**Environment:** #{Octopus.Environment.Name}\n**Deployed by:** #{Octopus.Deployment.CreatedBy.DisplayName}\n**Deployed at:** #{Octopus.Deployment.Created}",
+  "DiscreteChannelRelease": false,
+  "IsDisabled": false,
+  "PersistenceSettings": {
+    "Type": "Database"
+  },
+  "ExtensionSettings": [],
+  "ModifiedOn": "2024-01-01T00:00:00.000Z",
+  "ModifiedBy": "system",
+  "Variables": {
+    "ScopeValues": {
+      "Environments": [
+        {
+          "Id": "Environments-1",
+          "Name": "Development"
+        },
+        {
+          "Id": "Environments-2", 
+          "Name": "Staging"
+        },
+        {
+          "Id": "Environments-3",
+          "Name": "Production"
+        }
+      ],
+      "Roles": [
+        {
+          "Id": "ecs-cluster",
+          "Name": "ecs-cluster"
+        }
+      ],
+      "Channels": [
+        {
+          "Id": "Channels-1",
+          "Name": "Default"
+        }
+      ]
+    },
+    "Variables": [
+      {
+        "Id": "Variables-1",
+        "Name": "AWS.Region",
+        "Value": "us-west-2",
+        "Description": "AWS Region for deployment",
+        "Scope": {},
+        "IsEditable": true,
+        "IsSensitive": false,
+        "Type": "String"
+      },
+      {
+        "Id": "Variables-2",
+        "Name": "AWS.AccountId",
+        "Value": "#{AWS.AccountId}",
+        "Description": "AWS Account ID",
+        "Scope": {},
+        "IsEditable": true,
+        "IsSensitive": true,
+        "Type": "String"
+      },
+      {
+        "Id": "Variables-3",
+        "Name": "ECS.ClusterName",
+        "Value": "poc3-ecs-cluster",
+        "Description": "ECS Cluster Name",
+        "Scope": {},
+        "IsEditable": true,
+        "IsSensitive": false,
+        "Type": "String"
+      },
+      {
+        "Id": "Variables-4",
+        "Name": "ECR.Registry",
+        "Value": "#{AWS.AccountId}.dkr.ecr.#{AWS.Region}.amazonaws.com",
+        "Description": "ECR Registry URL",
+        "Scope": {},
+        "IsEditable": true,
+        "IsSensitive": false,
+        "Type": "String"
+      },
+      {
+        "Id": "Variables-5",
+        "Name": "NodeJS.ServiceName",
+        "Value": "poc3-nodejs-react",
+        "Description": "Node.js Service Name in ECS",
+        "Scope": {},
+        "IsEditable": true,
+        "IsSensitive": false,
+        "Type": "String"
+      },
+      {
+        "Id": "Variables-6",
+        "Name": "Python.ServiceName",
+        "Value": "poc3-python-fastapi",
+        "Description": "Python Service Name in ECS",
+        "Scope": {},
+        "IsEditable": true,
+        "IsSensitive": false,
+        "Type": "String"
+      },
+      {
+        "Id": "Variables-7",
+        "Name": "Java.ServiceName",
+        "Value": "poc3-java-springboot",
+        "Description": "Java Service Name in ECS",
+        "Scope": {},
+        "IsEditable": true,
+        "IsSensitive": false,
+        "Type": "String"
+      },
+      {
+        "Id": "Variables-8",
+        "Name": "DotNet.ServiceName",
+        "Value": "poc3-dotnet-webapi",
+        "Description": ".NET Service Name in ECS",
+        "Scope": {},
+        "IsEditable": true,
+        "IsSensitive": false,
+        "Type": "String"
+      },
+      {
+        "Id": "Variables-9",
+        "Name": "Environment.Type",
+        "Value": "development",
+        "Description": "Environment type for applications",
+        "Scope": {
+          "Environment": ["Environments-1"]
+        },
+        "IsEditable": true,
+        "IsSensitive": false,
+        "Type": "String"
+      },
+      {
+        "Id": "Variables-10",
+        "Name": "Environment.Type",
+        "Value": "staging",
+        "Description": "Environment type for applications",
+        "Scope": {
+          "Environment": ["Environments-2"]
+        },
+        "IsEditable": true,
+        "IsSensitive": false,
+        "Type": "String"
+      },
+      {
+        "Id": "Variables-11",
+        "Name": "Environment.Type",
+        "Value": "production",
+        "Description": "Environment type for applications",
+        "Scope": {
+          "Environment": ["Environments-3"]
+        },
+        "IsEditable": true,
+        "IsSensitive": false,
+        "Type": "String"
+      },
+      {
+        "Id": "Variables-12",
+        "Name": "LoadBalancer.TargetGroup.NodeJS",
+        "Value": "poc3-nodejs-react-tg",
+        "Description": "Target Group ARN for Node.js service",
+        "Scope": {},
+        "IsEditable": true,
+        "IsSensitive": false,
+        "Type": "String"
+      },
+      {
+        "Id": "Variables-13",
+        "Name": "LoadBalancer.TargetGroup.Python",
+        "Value": "poc3-python-fastapi-tg",
+        "Description": "Target Group ARN for Python service",
+        "Scope": {},
+        "IsEditable": true,
+        "IsSensitive": false,
+        "Type": "String"
+      },
+      {
+        "Id": "Variables-14",
+        "Name": "LoadBalancer.TargetGroup.Java",
+        "Value": "poc3-java-springboot-tg",
+        "Description": "Target Group ARN for Java service",
+        "Scope": {},
+        "IsEditable": true,
+        "IsSensitive": false,
+        "Type": "String"
+      },
+      {
+        "Id": "Variables-15",
+        "Name": "LoadBalancer.TargetGroup.DotNet",
+        "Value": "poc3-dotnet-webapi-tg",
+        "Description": "Target Group ARN for .NET service",
+        "Scope": {},
+        "IsEditable": true,
+        "IsSensitive": false,
+        "Type": "String"
+      }
+    ]
+  }
+}

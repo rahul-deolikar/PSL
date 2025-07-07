@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="https://www.jetbrains.com/teamcity/schemas/2020.1" 
+         uuid="POC3_Project" 
+         name="POC3 - Complete CI/CD Pipeline" 
+         description="Complete CI/CD pipeline demonstration with multiple technology stacks">
+
+  <parameters>
+    <param name="env.PROJECT_NAME" value="poc3" />
+    <param name="env.AWS_REGION" value="us-west-2" />
+    <param name="env.ECR_REGISTRY" value="%aws.account.id%.dkr.ecr.%env.AWS_REGION%.amazonaws.com" />
+    <param name="env.SONAR_HOST_URL" value="http://sonarqube:9000" />
+    <param name="env.JFROG_URL" value="https://your-company.jfrog.io" />
+    <param name="env.OCTOPUS_URL" value="https://your-octopus.octopus.app" />
+  </parameters>
+
+  <cleanup />
+
+  <vcs-settings>
+    <vcs-entry-ref root-id="POC3_GitHubVcsRoot" />
+  </vcs-settings>
+
+  <build-types>
+    <build-type-ref id="POC3_Build_NodeJS_React" />
+    <build-type-ref id="POC3_Build_Python_FastAPI" />
+    <build-type-ref id="POC3_Build_Java_SpringBoot" />
+    <build-type-ref id="POC3_Build_DotNet_WebAPI" />
+    <build-type-ref id="POC3_Security_SAST" />
+    <build-type-ref id="POC3_Security_DAST" />
+    <build-type-ref id="POC3_Security_SCA" />
+    <build-type-ref id="POC3_Deploy_Staging" />
+    <build-type-ref id="POC3_Deploy_Production" />
+  </build-types>
+
+  <templates>
+    <build-type-template id="POC3_Template_SecurityScan" name="Security Scan Template">
+      <settings>
+        <parameters>
+          <param name="env.SCAN_TYPE" value="" />
+          <param name="env.TARGET_PATH" value="poc3/applications" />
+        </parameters>
+        <build-runners>
+          <runner id="SECURITY_SCANNER" name="Security Scanner" type="simpleRunner">
+            <parameters>
+              <param name="script.content">
+                <![CDATA[
+                echo "Running %env.SCAN_TYPE% security scan..."
+                
+                case "%env.SCAN_TYPE%" in
+                  "SAST")
+                    echo "Running Static Application Security Testing..."
+                    # SonarQube scan
+                    sonar-scanner \
+                      -Dsonar.projectKey=poc3 \
+                      -Dsonar.sources=%env.TARGET_PATH% \
+                      -Dsonar.host.url=%env.SONAR_HOST_URL% \
+                      -Dsonar.login=%SONAR_TOKEN%
+                    
+                    # CodeQL scan
+                    codeql database create codeql-db --language=javascript,python,java,csharp --source-root=%env.TARGET_PATH%
+                    codeql database analyze codeql-db --format=sarif-latest --output=codeql-results.sarif
+                    ;;
+                  "DAST")
+                    echo "Running Dynamic Application Security Testing..."
+                    # OWASP ZAP scan
+                    docker run -v $(pwd):/zap/wrk/:rw -t owasp/zap2docker-stable zap-baseline.py \
+                      -t http://localhost:3000 -J zap-report.json
+                    ;;
+                  "SCA")
+                    echo "Running Software Composition Analysis..."
+                    # Snyk scan
+                    snyk test --all-projects --json > snyk-results.json
+                    
+                    # OWASP Dependency Check
+                    dependency-check --project poc3 --scan %env.TARGET_PATH% --format JSON --out dependency-check-report.json
+                    ;;
+                esac
+                ]]>
+              </param>
+              <param name="teamcity.step.mode" value="default" />
+            </parameters>
+          </runner>
+        </build-runners>
+      </settings>
+    </build-type-template>
+  </templates>
+
+  <vcs-roots>
+    <vcs-root id="POC3_GitHubVcsRoot" name="POC3 GitHub Repository" type="jetbrains.git">
+      <param name="agentCleanFilesPolicy" value="ALL_UNTRACKED" />
+      <param name="agentCleanPolicy" value="ON_BRANCH_CHANGE" />
+      <param name="authMethod" value="PASSWORD" />
+      <param name="branch" value="refs/heads/main" />
+      <param name="ignoreKnownHosts" value="true" />
+      <param name="submoduleCheckout" value="CHECKOUT" />
+      <param name="url" value="https://github.com/your-org/poc3.git" />
+      <param name="useAlternates" value="true" />
+      <param name="username" value="%github.username%" />
+      <param name="secure:password" value="%github.token%" />
+    </vcs-root>
+  </vcs-roots>
+
+  <project-features>
+    <feature id="PROJECT_EXT_1" type="CloudIntegration">
+      <parameters>
+        <param name="cloudType" value="amazon" />
+        <param name="profileId" value="aws-profile" />
+        <param name="region" value="%env.AWS_REGION%" />
+      </parameters>
+    </feature>
+    
+    <feature id="PROJECT_EXT_2" type="OctopusDeployIntegration">
+      <parameters>
+        <param name="octopus-url" value="%env.OCTOPUS_URL%" />
+        <param name="octopus-apikey" value="%octopus.apikey%" />
+      </parameters>
+    </feature>
+  </project-features>
+
+</project>

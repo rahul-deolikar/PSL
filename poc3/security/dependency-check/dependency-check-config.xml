@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dependencyCheck>
+    <!-- Project Information -->
+    <project>
+        <name>POC3 - Complete CI/CD Pipeline</name>
+        <version>1.0.0</version>
+        <description>Software Composition Analysis for POC3 multi-technology stack</description>
+    </project>
+
+    <!-- Scan Configuration -->
+    <scan>
+        <!-- Node.js/React Application -->
+        <fileset>
+            <directory>poc3/applications/nodejs-react</directory>
+            <includes>
+                <include>package.json</include>
+                <include>package-lock.json</include>
+                <include>node_modules/**/*.json</include>
+            </includes>
+            <excludes>
+                <exclude>node_modules/**/test/**</exclude>
+                <exclude>node_modules/**/tests/**</exclude>
+            </excludes>
+        </fileset>
+
+        <!-- Python FastAPI Application -->
+        <fileset>
+            <directory>poc3/applications/python-fastapi</directory>
+            <includes>
+                <include>requirements.txt</include>
+                <include>**/*.py</include>
+            </includes>
+            <excludes>
+                <exclude>venv/**</exclude>
+                <exclude>__pycache__/**</exclude>
+                <exclude>test_*.py</exclude>
+            </excludes>
+        </fileset>
+
+        <!-- Java Spring Boot Application -->
+        <fileset>
+            <directory>poc3/applications/java-springboot</directory>
+            <includes>
+                <include>pom.xml</include>
+                <include>target/dependency/*.jar</include>
+                <include>src/**/*.java</include>
+            </includes>
+            <excludes>
+                <exclude>target/test-classes/**</exclude>
+                <exclude>src/test/**</exclude>
+            </excludes>
+        </fileset>
+
+        <!-- .NET Core Application -->
+        <fileset>
+            <directory>poc3/applications/dotnet-webapi</directory>
+            <includes>
+                <include>*.csproj</include>
+                <include>**/*.cs</include>
+                <include>bin/**/*.dll</include>
+            </includes>
+            <excludes>
+                <exclude>bin/Debug/**</exclude>
+                <exclude>obj/**</exclude>
+                <exclude>TestResults/**</exclude>
+            </excludes>
+        </fileset>
+    </scan>
+
+    <!-- Analysis Configuration -->
+    <analysis>
+        <!-- Enable analyzers -->
+        <analyzers>
+            <analyzer name="jar" enabled="true" />
+            <analyzer name="javascript" enabled="true" />
+            <analyzer name="node" enabled="true" />
+            <analyzer name="python" enabled="true" />
+            <analyzer name="assembly" enabled="true" />
+            <analyzer name="msbuild" enabled="true" />
+            <analyzer name="nuget" enabled="true" />
+            <analyzer name="nexus" enabled="false" />
+            <analyzer name="central" enabled="true" />
+            <analyzer name="ossindex" enabled="true" />
+        </analyzers>
+
+        <!-- CVE Data -->
+        <cve>
+            <autoUpdate>true</autoUpdate>
+            <url>https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-recent.json.gz</url>
+            <validForHours>24</validForHours>
+        </cve>
+
+        <!-- Vulnerability Thresholds -->
+        <vulnerabilities>
+            <failOnCvss>7.0</failOnCvss>
+            <failBuildOnCvss>9.0</failBuildOnCvss>
+        </vulnerabilities>
+
+        <!-- Suppression Rules -->
+        <suppressions>
+            <!-- Example suppression for false positives -->
+            <suppression>
+                <notes>Example: Suppress known false positive for development dependencies</notes>
+                <packageUrl regex="true">^pkg:npm/.*@.*</packageUrl>
+                <cve>CVE-2021-XXXXX</cve>
+            </suppression>
+        </suppressions>
+    </analysis>
+
+    <!-- Reporting Configuration -->
+    <reporting>
+        <format>ALL</format>
+        <formats>
+            <format>JSON</format>
+            <format>XML</format>
+            <format>HTML</format>
+            <format>CSV</format>
+            <format>SARIF</format>
+        </formats>
+        <outputDirectory>reports</outputDirectory>
+        <outputFilename>dependency-check-report</outputFilename>
+    </reporting>
+
+    <!-- Database Configuration -->
+    <database>
+        <connectionString>jdbc:h2:file:%DATA%/odc</connectionString>
+        <user>dcuser</user>
+        <driverName>org.h2.Driver</driverName>
+        <driverPath>%DATA%/lib/h2-*.jar</driverPath>
+    </database>
+
+    <!-- Advanced Settings -->
+    <settings>
+        <dataDirectory>%USERPROFILE%/.m2/repository/org/owasp/dependency-check-data</dataDirectory>
+        <tempDirectory>./temp</tempDirectory>
+        <logLevel>INFO</logLevel>
+        <enableExperimental>false</enableExperimental>
+        <enableRetired>true</enableRetired>
+        <retireJsUrl>https://raw.githubusercontent.com/RetireJS/retire.js/master/repository/jsrepository.json</retireJsUrl>
+    </settings>
+
+    <!-- Integration Settings -->
+    <integration>
+        <teamcity>
+            <enabled>true</enabled>
+            <reportServiceMessages>true</reportServiceMessages>
+        </teamcity>
+        <jenkins>
+            <enabled>false</enabled>
+        </jenkins>
+    </integration>
+
+</dependencyCheck>
