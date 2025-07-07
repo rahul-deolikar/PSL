@@ -1,1 +1,250 @@
-THIS SHOULD BE A LINTER ERROR
+<?xml version="1.0" encoding="UTF-8"?>
+<build-type xmlns="https://www.jetbrains.com/teamcity/schemas/2020.1" 
+           uuid="POC3_Build_Python_FastAPI" 
+           name="Build - Python FastAPI" 
+           description="Build and test Python FastAPI hello world application">
+
+  <settings>
+    <parameters>
+      <param name="env.APP_NAME" value="python-fastapi" />
+      <param name="env.APP_PORT" value="8000" />
+      <param name="env.DOCKER_IMAGE" value="%env.ECR_REGISTRY%/poc3-python-fastapi" />
+      <param name="env.PYTHON_VERSION" value="3.11" />
+    </parameters>
+
+    <build-runners>
+      <!-- Setup Python Environment -->
+      <runner id="SETUP" name="Setup Python Environment" type="simpleRunner">
+        <parameters>
+          <param name="script.content">
+            <![CDATA[
+            echo "=== Python FastAPI Application Build ==="
+            echo "Working directory: $(pwd)"
+            echo "Python version: $(python3 --version)"
+            echo "Pip version: $(pip3 --version)"
+            
+            cd poc3/applications/python-fastapi
+            echo "Application directory: $(pwd)"
+            ls -la
+            
+            # Create virtual environment
+            python3 -m venv venv
+            source venv/bin/activate
+            
+            echo "Virtual environment created and activated"
+            which python
+            python --version
+            ]]>
+          </param>
+        </parameters>
+      </runner>
+
+      <!-- Install Dependencies -->
+      <runner id="INSTALL" name="Install Dependencies" type="simpleRunner">
+        <parameters>
+          <param name="script.content">
+            <![CDATA[
+            cd poc3/applications/python-fastapi
+            source venv/bin/activate
+            
+            echo "Installing Python dependencies..."
+            pip install --upgrade pip
+            pip install -r requirements.txt
+            pip install pytest pytest-asyncio pytest-cov httpx
+            
+            echo "Dependencies installed successfully"
+            pip list
+            ]]>
+          </param>
+        </parameters>
+      </runner>
+
+      <!-- Code Quality and Linting -->
+      <runner id="LINT" name="Code Quality Check" type="simpleRunner">
+        <parameters>
+          <param name="script.content">
+            <![CDATA[
+            cd poc3/applications/python-fastapi
+            source venv/bin/activate
+            
+            echo "Installing linting tools..."
+            pip install flake8 black isort mypy
+            
+            echo "Running code formatting check..."
+            black --check --diff .
+            
+            echo "Running import sorting check..."
+            isort --check-only --diff .
+            
+            echo "Running flake8 linting..."
+            flake8 . --max-line-length=88 --extend-ignore=E203
+            
+            echo "Running type checking..."
+            mypy . --ignore-missing-imports || echo "Type checking completed with warnings"
+            
+            echo "Running security check..."
+            pip install bandit
+            bandit -r . -f json -o bandit-report.json || echo "Security scan completed"
+            ]]>
+          </param>
+        </parameters>
+      </runner>
+
+      <!-- Unit Tests -->
+      <runner id="TEST" name="Unit Tests" type="simpleRunner">
+        <parameters>
+          <param name="script.content">
+            <![CDATA[
+            cd poc3/applications/python-fastapi
+            source venv/bin/activate
+            
+            echo "Running unit tests..."
+            pytest test_main.py -v --cov=main --cov-report=xml --cov-report=html --cov-report=term
+            
+            echo "Test results:"
+            cat htmlcov/index.html | grep -o 'pc_cov.*%' || echo "Coverage report generated"
+            ]]>
+          </param>
+        </parameters>
+      </runner>
+
+      <!-- Docker Build -->
+      <runner id="DOCKER_BUILD" name="Docker Build" type="simpleRunner">
+        <parameters>
+          <param name="script.content">
+            <![CDATA[
+            cd poc3/applications/python-fastapi
+            
+            echo "Building Docker image..."
+            docker build -t %env.DOCKER_IMAGE%:latest -t %env.DOCKER_IMAGE%:%build.number% .
+            
+            echo "Docker image built successfully"
+            docker images | grep poc3-python-fastapi
+            
+            # Run security scan on image
+            echo "Running container security scan..."
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+              -v $(pwd):/tmp/scan aquasec/trivy:latest image \
+              --format json --output /tmp/scan/trivy-report.json \
+              %env.DOCKER_IMAGE%:latest
+            ]]>
+          </param>
+        </parameters>
+      </runner>
+
+      <!-- Integration Tests -->
+      <runner id="INTEGRATION_TEST" name="Integration Tests" type="simpleRunner">
+        <parameters>
+          <param name="script.content">
+            <![CDATA[
+            cd poc3/applications/python-fastapi
+            
+            echo "Starting FastAPI application for integration tests..."
+            docker run -d --name test-fastapi -p %env.APP_PORT%:%env.APP_PORT% %env.DOCKER_IMAGE%:latest
+            
+            # Wait for application to start
+            sleep 15
+            
+            echo "Running integration tests..."
+            curl -f http://localhost:%env.APP_PORT%/health || exit 1
+            curl -f http://localhost:%env.APP_PORT%/api/hello || exit 1
+            curl -f http://localhost:%env.APP_PORT%/api/info || exit 1
+            curl -f http://localhost:%env.APP_PORT%/docs || exit 1
+            
+            echo "Integration tests passed"
+            
+            # Cleanup
+            docker stop test-fastapi
+            docker rm test-fastapi
+            ]]>
+          </param>
+        </parameters>
+      </runner>
+
+      <!-- Push to ECR -->
+      <runner id="PUSH_ECR" name="Push to ECR" type="simpleRunner">
+        <parameters>
+          <param name="script.content">
+            <![CDATA[
+            cd poc3/applications/python-fastapi
+            
+            echo "Authenticating with ECR..."
+            aws ecr get-login-password --region %env.AWS_REGION% | docker login --username AWS --password-stdin %env.ECR_REGISTRY%
+            
+            # Create repository if it doesn't exist
+            aws ecr describe-repositories --repository-names poc3-python-fastapi --region %env.AWS_REGION% || \
+            aws ecr create-repository --repository-name poc3-python-fastapi --region %env.AWS_REGION%
+            
+            echo "Pushing Docker image to ECR..."
+            docker push %env.DOCKER_IMAGE%:latest
+            docker push %env.DOCKER_IMAGE%:%build.number%
+            
+            echo "Image pushed successfully to ECR"
+            ]]>
+          </param>
+        </parameters>
+      </runner>
+
+      <!-- Publish Artifacts -->
+      <runner id="PUBLISH" name="Publish Artifacts" type="simpleRunner">
+        <parameters>
+          <param name="script.content">
+            <![CDATA[
+            cd poc3/applications/python-fastapi
+            
+            echo "Publishing artifacts to JFrog..."
+            
+            # Create artifact package
+            tar -czf poc3-python-fastapi-%build.number%.tar.gz \
+              requirements.txt main.py test_main.py Dockerfile
+            
+            # Upload to JFrog (if configured)
+            if [ ! -z "%env.JFROG_URL%" ]; then
+              curl -u %jfrog.username%:%jfrog.password% \
+                -T poc3-python-fastapi-%build.number%.tar.gz \
+                "%env.JFROG_URL%/artifactory/poc3-generic/python-fastapi/poc3-python-fastapi-%build.number%.tar.gz"
+            fi
+            
+            echo "Artifacts published successfully"
+            ]]>
+          </param>
+        </parameters>
+      </runner>
+    </build-runners>
+
+    <vcs-settings>
+      <vcs-entry-ref root-id="POC3_GitHubVcsRoot" />
+    </vcs-settings>
+
+    <triggers>
+      <trigger id="VCS_TRIGGER" type="vcsTrigger">
+        <parameters>
+          <param name="enableQueueOptimization" value="true" />
+          <param name="quietPeriodMode" value="DO_NOT_USE" />
+        </parameters>
+      </trigger>
+    </triggers>
+
+    <features>
+      <feature id="perfmon" type="perfmon" />
+      <feature id="dockerSupport" type="DockerSupport">
+        <parameters>
+          <param name="dockerImagePlatform" value="linux" />
+        </parameters>
+      </feature>
+    </features>
+
+    <cleanup />
+  </settings>
+
+  <requirements>
+    <requirement id="RQ_PYTHON" type="equals">
+      <param name="property-name" value="system.python.version" />
+      <param name="property-value" value="%env.PYTHON_VERSION%" />
+    </requirement>
+    <requirement id="RQ_DOCKER" type="exists">
+      <param name="property-name" value="docker.server.version" />
+    </requirement>
+  </requirements>
+
+</build-type>

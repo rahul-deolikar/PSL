@@ -1,0 +1,113 @@
+{
+  "Id": "deploymentprocesses-Projects-1",
+  "ProjectId": "Projects-1",
+  "Steps": [
+    {
+      "Id": "step-1",
+      "Name": "Deploy Node.js/React to ECS",
+      "PackageRequirement": "LetOctopusDecide",
+      "Properties": {
+        "Octopus.Action.TargetRoles": "ecs-cluster"
+      },
+      "Condition": "Success",
+      "StartTrigger": "StartAfterPrevious",
+      "Actions": [
+        {
+          "Id": "action-1",
+          "Name": "Deploy Node.js/React to ECS",
+          "ActionType": "Octopus.AwsRunCloudFormation",
+          "IsDisabled": false,
+          "CanBeUsedForProjectVersioning": false,
+          "IsRequired": false,
+          "WorkerPoolId": null,
+          "Container": {
+            "Image": "octopusdeploy/worker-tools:ubuntu.18.04",
+            "FeedId": "feeds-builtin"
+          },
+          "Properties": {
+            "Octopus.Action.Aws.CloudFormationTemplate": "{\n  \"AWSTemplateFormatVersion\": \"2010-09-09\",\n  \"Description\": \"POC3 Node.js/React ECS Service\",\n  \"Parameters\": {\n    \"ClusterName\": {\n      \"Type\": \"String\",\n      \"Default\": \"#{ECS.ClusterName}\"\n    },\n    \"ServiceName\": {\n      \"Type\": \"String\",\n      \"Default\": \"#{NodeJS.ServiceName}\"\n    },\n    \"ImageUri\": {\n      \"Type\": \"String\",\n      \"Default\": \"#{ECR.Registry}/poc3-nodejs-react:#{Octopus.Release.Number}\"\n    },\n    \"TargetGroupArn\": {\n      \"Type\": \"String\",\n      \"Default\": \"#{LoadBalancer.TargetGroup.NodeJS}\"\n    }\n  },\n  \"Resources\": {\n    \"TaskDefinition\": {\n      \"Type\": \"AWS::ECS::TaskDefinition\",\n      \"Properties\": {\n        \"Family\": \"poc3-nodejs-react\",\n        \"NetworkMode\": \"bridge\",\n        \"RequiresCompatibilities\": [\"EC2\"],\n        \"ExecutionRoleArn\": \"#{AWS.ECS.ExecutionRole}\",\n        \"TaskRoleArn\": \"#{AWS.ECS.TaskRole}\",\n        \"ContainerDefinitions\": [\n          {\n            \"Name\": \"poc3-nodejs-react\",\n            \"Image\": \"#{ImageUri}\",\n            \"Memory\": 512,\n            \"PortMappings\": [\n              {\n                \"ContainerPort\": 3000,\n                \"HostPort\": 0,\n                \"Protocol\": \"tcp\"\n              }\n            ],\n            \"Environment\": [\n              {\n                \"Name\": \"NODE_ENV\",\n                \"Value\": \"#{Environment.Type}\"\n              },\n              {\n                \"Name\": \"PORT\",\n                \"Value\": \"3000\"\n              }\n            ],\n            \"LogConfiguration\": {\n              \"LogDriver\": \"awslogs\",\n              \"Options\": {\n                \"awslogs-group\": \"/ecs/poc3-nodejs-react\",\n                \"awslogs-region\": \"#{AWS.Region}\",\n                \"awslogs-stream-prefix\": \"ecs\"\n              }\n            },\n            \"HealthCheck\": {\n              \"Command\": [\"CMD-SHELL\", \"curl -f http://localhost:3000/health || exit 1\"],\n              \"Interval\": 30,\n              \"Timeout\": 5,\n              \"Retries\": 3,\n              \"StartPeriod\": 60\n            },\n            \"Essential\": true\n          }\n        ]\n      }\n    },\n    \"Service\": {\n      \"Type\": \"AWS::ECS::Service\",\n      \"Properties\": {\n        \"Cluster\": \"#{ClusterName}\",\n        \"ServiceName\": \"#{ServiceName}\",\n        \"TaskDefinition\": {\"Ref\": \"TaskDefinition\"},\n        \"DesiredCount\": 2,\n        \"LaunchType\": \"EC2\",\n        \"LoadBalancers\": [\n          {\n            \"ContainerName\": \"poc3-nodejs-react\",\n            \"ContainerPort\": 3000,\n            \"TargetGroupArn\": \"#{TargetGroupArn}\"\n          }\n        ],\n        \"DeploymentConfiguration\": {\n          \"MaximumPercent\": 200,\n          \"MinimumHealthyPercent\": 50\n        },\n        \"PlacementStrategy\": [\n          {\n            \"Type\": \"spread\",\n            \"Field\": \"attribute:ecs.availability-zone\"\n          },\n          {\n            \"Type\": \"spread\",\n            \"Field\": \"instanceId\"\n          }\n        ]\n      }\n    }\n  }\n}",
+            "Octopus.Action.Aws.CloudFormationStackName": "poc3-nodejs-react-#{Octopus.Environment.Name | ToLower}",
+            "Octopus.Action.Aws.Region": "#{AWS.Region}",
+            "Octopus.Action.Aws.AssumeRole": "false",
+            "Octopus.Action.Aws.CloudFormation.Tags": "[{\"key\":\"Project\",\"value\":\"POC3\"},{\"key\":\"Environment\",\"value\":\"#{Octopus.Environment.Name}\"},{\"key\":\"Application\",\"value\":\"nodejs-react\"}]"
+          },
+          "Environments": [],
+          "ExcludedEnvironments": [],
+          "Channels": [],
+          "TenantTags": [],
+          "Packages": []
+        }
+      ]
+    },
+    {
+      "Id": "step-2",
+      "Name": "Deploy Python FastAPI to ECS",
+      "PackageRequirement": "LetOctopusDecide",
+      "Properties": {
+        "Octopus.Action.TargetRoles": "ecs-cluster"
+      },
+      "Condition": "Success",
+      "StartTrigger": "StartAfterPrevious",
+      "Actions": [
+        {
+          "Id": "action-2",
+          "Name": "Deploy Python FastAPI to ECS",
+          "ActionType": "Octopus.AwsRunCloudFormation",
+          "IsDisabled": false,
+          "CanBeUsedForProjectVersioning": false,
+          "IsRequired": false,
+          "WorkerPoolId": null,
+          "Container": {
+            "Image": "octopusdeploy/worker-tools:ubuntu.18.04",
+            "FeedId": "feeds-builtin"
+          },
+          "Properties": {
+            "Octopus.Action.Aws.CloudFormationTemplate": "{\n  \"AWSTemplateFormatVersion\": \"2010-09-09\",\n  \"Description\": \"POC3 Python FastAPI ECS Service\",\n  \"Parameters\": {\n    \"ClusterName\": {\n      \"Type\": \"String\",\n      \"Default\": \"#{ECS.ClusterName}\"\n    },\n    \"ServiceName\": {\n      \"Type\": \"String\",\n      \"Default\": \"#{Python.ServiceName}\"\n    },\n    \"ImageUri\": {\n      \"Type\": \"String\",\n      \"Default\": \"#{ECR.Registry}/poc3-python-fastapi:#{Octopus.Release.Number}\"\n    },\n    \"TargetGroupArn\": {\n      \"Type\": \"String\",\n      \"Default\": \"#{LoadBalancer.TargetGroup.Python}\"\n    }\n  },\n  \"Resources\": {\n    \"TaskDefinition\": {\n      \"Type\": \"AWS::ECS::TaskDefinition\",\n      \"Properties\": {\n        \"Family\": \"poc3-python-fastapi\",\n        \"NetworkMode\": \"bridge\",\n        \"RequiresCompatibilities\": [\"EC2\"],\n        \"ExecutionRoleArn\": \"#{AWS.ECS.ExecutionRole}\",\n        \"TaskRoleArn\": \"#{AWS.ECS.TaskRole}\",\n        \"ContainerDefinitions\": [\n          {\n            \"Name\": \"poc3-python-fastapi\",\n            \"Image\": \"#{ImageUri}\",\n            \"Memory\": 512,\n            \"PortMappings\": [\n              {\n                \"ContainerPort\": 8000,\n                \"HostPort\": 0,\n                \"Protocol\": \"tcp\"\n              }\n            ],\n            \"Environment\": [\n              {\n                \"Name\": \"ENVIRONMENT\",\n                \"Value\": \"#{Environment.Type}\"\n              },\n              {\n                \"Name\": \"PORT\",\n                \"Value\": \"8000\"\n              }\n            ],\n            \"LogConfiguration\": {\n              \"LogDriver\": \"awslogs\",\n              \"Options\": {\n                \"awslogs-group\": \"/ecs/poc3-python-fastapi\",\n                \"awslogs-region\": \"#{AWS.Region}\",\n                \"awslogs-stream-prefix\": \"ecs\"\n              }\n            },\n            \"HealthCheck\": {\n              \"Command\": [\"CMD-SHELL\", \"curl -f http://localhost:8000/health || exit 1\"],\n              \"Interval\": 30,\n              \"Timeout\": 5,\n              \"Retries\": 3,\n              \"StartPeriod\": 60\n            },\n            \"Essential\": true\n          }\n        ]\n      }\n    },\n    \"Service\": {\n      \"Type\": \"AWS::ECS::Service\",\n      \"Properties\": {\n        \"Cluster\": \"#{ClusterName}\",\n        \"ServiceName\": \"#{ServiceName}\",\n        \"TaskDefinition\": {\"Ref\": \"TaskDefinition\"},\n        \"DesiredCount\": 2,\n        \"LaunchType\": \"EC2\",\n        \"LoadBalancers\": [\n          {\n            \"ContainerName\": \"poc3-python-fastapi\",\n            \"ContainerPort\": 8000,\n            \"TargetGroupArn\": \"#{TargetGroupArn}\"\n          }\n        ],\n        \"DeploymentConfiguration\": {\n          \"MaximumPercent\": 200,\n          \"MinimumHealthyPercent\": 50\n        }\n      }\n    }\n  }\n}",
+            "Octopus.Action.Aws.CloudFormationStackName": "poc3-python-fastapi-#{Octopus.Environment.Name | ToLower}",
+            "Octopus.Action.Aws.Region": "#{AWS.Region}",
+            "Octopus.Action.Aws.AssumeRole": "false",
+            "Octopus.Action.Aws.CloudFormation.Tags": "[{\"key\":\"Project\",\"value\":\"POC3\"},{\"key\":\"Environment\",\"value\":\"#{Octopus.Environment.Name}\"},{\"key\":\"Application\",\"value\":\"python-fastapi\"}]"
+          },
+          "Environments": [],
+          "ExcludedEnvironments": [],
+          "Channels": [],
+          "TenantTags": [],
+          "Packages": []
+        }
+      ]
+    },
+    {
+      "Id": "step-3",
+      "Name": "Run Post-Deployment Tests",
+      "PackageRequirement": "LetOctopusDecide",
+      "Properties": {
+        "Octopus.Action.TargetRoles": "ecs-cluster"
+      },
+      "Condition": "Success",
+      "StartTrigger": "StartAfterPrevious",
+      "Actions": [
+        {
+          "Id": "action-3",
+          "Name": "Run Post-Deployment Health Checks",
+          "ActionType": "Octopus.Script",
+          "IsDisabled": false,
+          "CanBeUsedForProjectVersioning": false,
+          "IsRequired": true,
+          "WorkerPoolId": null,
+          "Properties": {
+            "Octopus.Action.Script.ScriptSource": "Inline",
+            "Octopus.Action.Script.Syntax": "Bash",
+            "Octopus.Action.Script.ScriptBody": "#!/bin/bash\n\necho \"Starting post-deployment health checks...\"\n\n# Function to check service health\ncheck_service_health() {\n    local service_name=$1\n    local health_endpoint=$2\n    local max_attempts=30\n    local attempt=1\n    \n    echo \"Checking health for $service_name at $health_endpoint\"\n    \n    while [ $attempt -le $max_attempts ]; do\n        echo \"Attempt $attempt/$max_attempts\"\n        \n        if curl -s -f \"$health_endpoint\" > /dev/null; then\n            echo \"✅ $service_name is healthy\"\n            return 0\n        else\n            echo \"❌ $service_name health check failed, retrying in 10 seconds...\"\n            sleep 10\n            ((attempt++))\n        fi\n    done\n    \n    echo \"❌ $service_name failed health checks after $max_attempts attempts\"\n    return 1\n}\n\n# Get load balancer DNS name from CloudFormation outputs\nLB_DNS_NAME=$(aws cloudformation describe-stacks \\\n    --stack-name \"poc3-infrastructure-#{Octopus.Environment.Name | ToLower}\" \\\n    --region \"#{AWS.Region}\" \\\n    --query \"Stacks[0].Outputs[?OutputKey=='LoadBalancerDNS'].OutputValue\" \\\n    --output text)\n\necho \"Load Balancer DNS: $LB_DNS_NAME\"\n\n# Check all services\nERRORS=0\n\n# Check Node.js/React service\nif ! check_service_health \"Node.js/React\" \"http://$LB_DNS_NAME:3000/health\"; then\n    ((ERRORS++))\nfi\n\n# Check Python FastAPI service\nif ! check_service_health \"Python FastAPI\" \"http://$LB_DNS_NAME:8000/health\"; then\n    ((ERRORS++))\nfi\n\n# Check Java Spring Boot service\nif ! check_service_health \"Java Spring Boot\" \"http://$LB_DNS_NAME:8080/actuator/health\"; then\n    ((ERRORS++))\nfi\n\n# Check .NET Core service\nif ! check_service_health \".NET Core Web API\" \"http://$LB_DNS_NAME:5000/health\"; then\n    ((ERRORS++))\nfi\n\n# Summary\nif [ $ERRORS -eq 0 ]; then\n    echo \"\\n🎉 All services are healthy and ready!\"\n    echo \"\\n📋 Service Endpoints:\"\n    echo \"• Node.js/React: http://$LB_DNS_NAME:3000\"\n    echo \"• Python FastAPI: http://$LB_DNS_NAME:8000\"\n    echo \"• Java Spring Boot: http://$LB_DNS_NAME:8080\"\n    echo \"• .NET Core Web API: http://$LB_DNS_NAME:5000\"\nelse\n    echo \"\\n❌ $ERRORS service(s) failed health checks\"\n    exit 1\nfi"
+          },
+          "Environments": [],
+          "ExcludedEnvironments": [],
+          "Channels": [],
+          "TenantTags": [],
+          "Packages": []
+        }
+      ]
+    }
+  ],
+  "Version": 1,
+  "LastSnapshotId": null
+}

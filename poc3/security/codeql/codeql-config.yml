@@ -1,0 +1,64 @@
+# CodeQL Configuration for POC3
+name: "POC3 Security Analysis"
+
+# Disable default setup
+disable-default-path-filters: false
+
+# Language-specific configurations
+queries:
+  - name: security-extended
+    uses: security-extended
+  - name: security-and-quality
+    uses: security-and-quality
+
+# Language matrix
+languages:
+  - javascript
+  - python
+  - java
+  - csharp
+
+# Path filters
+paths:
+  - "poc3/applications/nodejs-react/**"
+  - "poc3/applications/python-fastapi/**"
+  - "poc3/applications/java-springboot/**"
+  - "poc3/applications/dotnet-webapi/**"
+
+paths-ignore:
+  - "**/node_modules/**"
+  - "**/target/**"
+  - "**/bin/**"
+  - "**/obj/**"
+  - "**/.venv/**"
+  - "**/venv/**"
+  - "**/coverage/**"
+  - "**/test-results/**"
+
+# Query suite configuration
+query-suite: security-extended
+
+# External repositories for custom queries
+external-repository-token: ${{ secrets.GITHUB_TOKEN }}
+
+# Database configuration
+database-bundle: true
+upload-database: true
+
+# Results configuration
+sarif-category: "CodeQL-Security"
+upload-sarif: true
+sarif-file: "codeql-results.sarif"
+
+# Advanced configuration
+threads: 0  # Use all available threads
+ram: 2048   # 2GB RAM limit
+
+# Compilation configuration for compiled languages
+auto-build: true
+build-command: |
+  # Java Spring Boot
+  cd poc3/applications/java-springboot && mvn compile
+  
+  # .NET Core
+  cd ../dotnet-webapi && dotnet build
