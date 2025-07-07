@@ -1,35 +1,50 @@
-provider "aws" {
-  region = var.aws_region
+resource "aws_ecs_cluster" "main" {
+  name = "${var.environment}-ecs-cluster"
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
+
+  tags = {
+    Environment = var.environment
+  }
 }
 
-module "networking" {
-  source = "./modules/networking"
+resource "aws_ecs_cluster_capacity_providers" "main" {
+  cluster_name = aws_ecs_cluster.main.name
 
-  vpc_cidr            = var.vpc_cidr
-  public_subnet_cidrs = var.public_subnet_cidrs
-  private_subnet_cidrs = var.private_subnet_cidrs
-  availability_zones  = var.availability_zones
-  environment         = var.environment
+  capacity_providers = ["FARGATE"]
+
+  default_capacity_provider_strategy {
+    base              = 1
+    weight            = 100
+    capacity_provider = "FARGATE"
+  }
 }
 
-module "ecs" {
-  source = "./modules/ecs"
+resource "aws_iam_role" "ecs_execution_role" {
+  name = "${var.environment}-ecs-execution-role"
 
-  environment = var.environment
-  vpc_id      = module.networking.vpc_id
-  private_subnet_ids = module.networking.private_subnet_ids
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Environment = var.environment
+  }
 }
 
-module "ec2" {
-  source = "./modules/ec2"
-
-  environment         = var.environment
-  vpc_id              = module.networking.vpc_id
-  public_subnet_ids   = module.networking.public_subnet_ids
-  ecs_cluster_name    = module.ecs.ecs_cluster_name
-  instance_type       = var.instance_type
-  key_name            = var.key_name
-  min_size            = var.min_size
-  max_size            = var.max_size
-  desired_capacity    = var.desired_capacity
+resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
+  role       = aws_iam_role.ecs_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
