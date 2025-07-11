@@ -7,35 +7,40 @@ This files contains a Proof of Concept (POC) for creating an AWS ECS cluster run
 The infrastructure creates:
 
 - **VPC** with public subnets across 2 availability zones
-![Uploading vpc (2).png…]()
+![alt text](<vpc (2)-3.png>)
 
 - **ECS Cluster** with EC2 capacity provider
-![alt text](<vpc (2)-1.png>)
+![alt text](ecs-cluster-1.png)
+
 - **Auto Scaling Group** for EC2 instances
-![alt text](auto-scalling.png)
+![alt text](autoscalling.png)
+
 - **Launch Template** with ECS-optimized AMI
-![alt text](template.png)
+![alt text](template-1.png)
+
+
 - **Security Groups** with appropriate ingress/egress rules
-![alt text](<sg (2).png>)
+![alt text](<sg (2)-1.png>)
+
 - **IAM Roles** and policies for ECS instances
-![alt text](image.png)
+
 - **S3 Backend** for Terraform state storage
-![alt text](s3-bucket.png)
+![alt text](tf.statefile-1.png)
 
 
 ## Prerequisites
 
-Before you begin, ensure you have:
-
-
 - AWS CLI installed and configured (`aws configure`)
-'''
-$ aws configure
+
+```
+aws configure
+```
+
 AWS Access Key ID [****************2WZ6]: 
 AWS Secret Access Key [****************Po7g]: 
 Default region name [us-east-1]: 
 Default output format [None]: 
-'''
+
 
 - Terraform >= 1.0 installed
 - Git installed-
@@ -44,15 +49,13 @@ Default output format [None]:
 
 ### Required AWS Permissions
 
-Your AWS user/role needs permissions for:
-- EC2 (VPC, instances, security groups, launch templates)
-- ECS (clusters, capacity providers)
+- EC2 VPC, instances, security groups, launch templates
+- ECS clusters, capacity providers
 - IAM (roles, policies, instance profiles)
 - Auto Scaling
-- S3 (for state storage)
-- DynamoDB (optional, for state locking)
+- S3 for state storage
+- DynamoDB for state locking
 
-## Quick Start
 
 ### 1. Set Up S3 Backend (Manual Step)
 
@@ -120,7 +123,7 @@ The deployment script supports several commands:
 
 ## GitHub Actions Workflow
 
-The repository includes a GitHub Actions workflow (`.github/workflows/terraform-deploy.yml`) that:
+The repository includes a GitHub Actions workflow 
 
 - Triggers on pushes to `main` branch and pull requests
 - Uses standard GitHub Actions:
@@ -133,77 +136,42 @@ The repository includes a GitHub Actions workflow (`.github/workflows/terraform-
 
 ### Setting Up GitHub Actions
 
-1. **Add AWS Credentials to GitHub Secrets:**
+1. **Add AWS Credentials to GitHub Secrets**
    Go to your repository → Settings → Secrets and variables → Actions
 
-   Add these secrets:
-   - `AWS_ACCESS_KEY_ID`: Your AWS access key
-   - `AWS_SECRET_ACCESS_KEY`: Your AWS secret key
-
-2. **Create Production Environment (Optional):**
+2. **Create Production Environment**
    - Go to Settings → Environments
    - Create a "production" environment
    - Add protection rules if needed
 
-3. **Push to Main Branch:**
+3. **Push to Main Branch**
    The workflow will automatically trigger and deploy your infrastructure.
 
 ## Project Structure
 
 ```
 .
-├── main.tf                        # Main Terraform configuration
-├── variables.tf                   # Variable definitions
-├── outputs.tf                     # Output definitions
-├── user_data.sh                   # EC2 user data script
-├── terraform.tfvars.example       # Example variables file
-├── .gitignore                     # Git ignore patterns
+├── main.tf                       
+├── variables.tf                 
+├── outputs.tf                   
+├── user_data.sh                  
+├── terraform.tfvars.example       
+├── .gitignore                     
 ├── .github/
 │   └── workflows/
-│       └── terraform-deploy.yml   # GitHub Actions workflow
+│       └── terraform-deploy.yml   
 ├── scripts/
-│   ├── setup-s3-backend.sh       # S3 backend setup script
-│   └── deploy.sh                 # Local deployment script
-└── README.md                      # This file
+│   ├── setup-s3-backend.sh      
+│   └── deploy.sh                 
+└── README.md                    
 ```
-
-## Terraform Resources Created
-
-| Resource Type | Description |
-|---------------|-------------|
-| `aws_vpc` | Virtual Private Cloud |
-| `aws_subnet` | Public subnets (2 AZs) |
-| `aws_internet_gateway` | Internet connectivity |
-| `aws_route_table` | Routing configuration |
-| `aws_security_group` | Network security rules |
-| `aws_iam_role` | IAM role for ECS instances |
-| `aws_iam_instance_profile` | Instance profile |
-| `aws_launch_template` | EC2 launch configuration |
-| `aws_autoscaling_group` | Auto scaling group |
-| `aws_ecs_cluster` | ECS cluster |
-| `aws_ecs_capacity_provider` | Capacity provider |
-
-## Outputs
-
-After successful deployment, Terraform provides these outputs:
-
-- `cluster_name`: Name of the ECS cluster
-- `cluster_arn`: ARN of the ECS cluster
-- `vpc_id`: VPC identifier
-- `public_subnet_ids`: List of public subnet IDs
-- `security_group_id`: Security group ID
-- `auto_scaling_group_name`: ASG name
-- `capacity_provider_name`: Capacity provider name
-- `launch_template_id`: Launch template ID
-
-## Customization
 
 ### Instance Types
 
 Modify the `instance_type` variable in `terraform.tfvars`:
 
 ```hcl
-instance_type = "t3.large"  # or t3.small, m5.large, etc.
+instance_type = "t3.large" 
 ```
 
 ### Scaling Configuration
@@ -224,30 +192,6 @@ Change the VPC CIDR block:
 vpc_cidr = "172.16.0.0/16"
 ```
 
-## Troubleshooting
-
-### Common Issues
-
-1. **S3 Bucket Already Exists**
-   - Update the bucket name in `main.tf` (line 13)
-   - Or use the existing bucket if you own it
-
-2. **AWS Credentials Not Found**
-   ```bash
-   aws configure
-   # or export AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
-   ```
-
-3. **Terraform State Lock**
-   ```bash
-   terraform force-unlock <LOCK_ID>
-   ```
-
-4. **GitHub Actions Failing**
-   - Check AWS credentials in GitHub Secrets
-   - Ensure the S3 bucket exists and is accessible
-   - Verify IAM permissions
-
 ### Validation Commands
 
 ```bash
@@ -264,14 +208,6 @@ tfsec .
 terraform plan
 ```
 
-## Security Considerations
-
-- EC2 instances are in public subnets but security groups restrict access
-- SSH access is limited to VPC CIDR range
-- ECS instances use IAM roles instead of access keys
-- S3 state bucket has encryption and versioning enabled
-- GitHub Actions uses OIDC or access keys (store in secrets)
-
 ## Cleanup
 
 To destroy all resources:
@@ -284,9 +220,8 @@ To destroy all resources:
 terraform destroy -auto-approve
 ```
 
-**Note:** This will not delete the S3 state bucket. Delete it manually if needed.
-
 ## Implemention
 Done 
 
 ---
+s
