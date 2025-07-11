@@ -1,26 +1,43 @@
 # ECS-EC2 Cluster POC with Terraform
 
-This repository contains a Proof of Concept (POC) for creating an AWS ECS cluster running on EC2 instances using Terraform Infrastructure as Code (IaC). The project includes automated deployment via GitHub Actions and stores Terraform state in S3.
+This files contains a Proof of Concept (POC) for creating an AWS ECS cluster running on EC2 instances using Terraform Infrastructure as Code (IaC). The project includes automated deployment via GitHub Actions and stores Terraform state in S3.
 
-## 🏗️ Architecture
+## Architecture
 
 The infrastructure creates:
 
 - **VPC** with public subnets across 2 availability zones
+![alt text](<vpc (2).png>)
 - **ECS Cluster** with EC2 capacity provider
+![alt text](<vpc (2)-1.png>)
 - **Auto Scaling Group** for EC2 instances
+![alt text](auto-scalling.png)
 - **Launch Template** with ECS-optimized AMI
+![alt text](template.png)
 - **Security Groups** with appropriate ingress/egress rules
+![alt text](<sg (2).png>)
 - **IAM Roles** and policies for ECS instances
+![alt text](image.png)
 - **S3 Backend** for Terraform state storage
+![alt text](s3-bucket.png)
 
-## 📋 Prerequisites
+
+## Prerequisites
 
 Before you begin, ensure you have:
 
+
 - AWS CLI installed and configured (`aws configure`)
+'''
+$ aws configure
+AWS Access Key ID [****************2WZ6]: 
+AWS Secret Access Key [****************Po7g]: 
+Default region name [us-east-1]: 
+Default output format [None]: 
+'''
+
 - Terraform >= 1.0 installed
-- Git installed
+- Git installed-
 - An AWS account with appropriate permissions
 - A GitHub account (for Actions workflow)
 
@@ -34,11 +51,12 @@ Your AWS user/role needs permissions for:
 - S3 (for state storage)
 - DynamoDB (optional, for state locking)
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Set Up S3 Backend (Manual Step)
 
 First, create the S3 bucket for storing Terraform state:
+![alt text](tf.statefile.png)
 
 ```bash
 # Make the script executable
@@ -87,7 +105,7 @@ chmod +x scripts/deploy.sh
 ./scripts/deploy.sh deploy
 ```
 
-## 🔧 Available Commands
+## Available Commands
 
 The deployment script supports several commands:
 
@@ -99,7 +117,7 @@ The deployment script supports several commands:
 ./scripts/deploy.sh output      # Show terraform outputs
 ```
 
-## 🔄 GitHub Actions Workflow
+## GitHub Actions Workflow
 
 The repository includes a GitHub Actions workflow (`.github/workflows/terraform-deploy.yml`) that:
 
@@ -129,7 +147,7 @@ The repository includes a GitHub Actions workflow (`.github/workflows/terraform-
 3. **Push to Main Branch:**
    The workflow will automatically trigger and deploy your infrastructure.
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 .
@@ -148,7 +166,7 @@ The repository includes a GitHub Actions workflow (`.github/workflows/terraform-
 └── README.md                      # This file
 ```
 
-## 🔍 Terraform Resources Created
+## Terraform Resources Created
 
 | Resource Type | Description |
 |---------------|-------------|
@@ -164,7 +182,7 @@ The repository includes a GitHub Actions workflow (`.github/workflows/terraform-
 | `aws_ecs_cluster` | ECS cluster |
 | `aws_ecs_capacity_provider` | Capacity provider |
 
-## 📊 Outputs
+## Outputs
 
 After successful deployment, Terraform provides these outputs:
 
@@ -177,7 +195,7 @@ After successful deployment, Terraform provides these outputs:
 - `capacity_provider_name`: Capacity provider name
 - `launch_template_id`: Launch template ID
 
-## 🔧 Customization
+## Customization
 
 ### Instance Types
 
@@ -205,7 +223,7 @@ Change the VPC CIDR block:
 vpc_cidr = "172.16.0.0/16"
 ```
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -245,7 +263,7 @@ tfsec .
 terraform plan
 ```
 
-## 🔒 Security Considerations
+## Security Considerations
 
 - EC2 instances are in public subnets but security groups restrict access
 - SSH access is limited to VPC CIDR range
@@ -253,7 +271,7 @@ terraform plan
 - S3 state bucket has encryption and versioning enabled
 - GitHub Actions uses OIDC or access keys (store in secrets)
 
-## 🧹 Cleanup
+## Cleanup
 
 To destroy all resources:
 
@@ -267,25 +285,7 @@ terraform destroy -auto-approve
 
 **Note:** This will not delete the S3 state bucket. Delete it manually if needed.
 
-## 📚 Additional Resources
-
-- [AWS ECS Documentation](https://docs.aws.amazon.com/ecs/)
-- [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [ECS-Optimized AMI](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html)
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+## Implemention
+Done 
 
 ---
-
-**Happy Terraforming!** 🚀
