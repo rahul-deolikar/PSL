@@ -7,7 +7,8 @@ This files contains a Proof of Concept (POC) for creating an AWS ECS cluster run
 The infrastructure creates:
 
 - **VPC** with public subnets across 2 availability zones
-"C:\Users\swati\OneDrive\Pictures\Screenshots\poc-1\vpc (2).png"
+![Uploading vpc (2).png…]()
+
 - **ECS Cluster** with EC2 capacity provider
 ![alt text](<vpc (2)-1.png>)
 - **Auto Scaling Group** for EC2 instances
